@@ -1,0 +1,17 @@
+# Common Whisper/ASR spellings → official forms from Diksioner Kreol Morisyen
+# These are NOT in the PDF variant list but appear frequently in transcripts.
+# Regenerate words.txt/aliases.txt from PDF does NOT touch this file.
+
+mwen:mo
+moin:mo
+nou:nu
+ou:u
+manje:manze
+fin:finn
+apres:apre
+apré:apre
+konn:kone
+konye:kone
+eske:eski
+esk:eski
+sava:sava

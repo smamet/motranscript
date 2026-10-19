@@ -1,0 +1,54 @@
+name: Build RunPod ASR image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag (never use latest)
+        default: v1
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Free runner disk
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.runpod
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/motranscript-asr:${{ inputs.tag }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/motranscript-asr:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=inline

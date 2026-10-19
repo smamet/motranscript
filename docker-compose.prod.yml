@@ -1,0 +1,79 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: motranscript
+      MYSQL_USER: motranscript
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - internal
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mysql+pymysql://motranscript:${MYSQL_PASSWORD}@db:3306/motranscript
+      DATA_DIR: /data
+      MODEL_CACHE_DIR: /data/models
+      INFERENCE_BACKEND: ${INFERENCE_BACKEND:-runpod}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env}
+    volumes:
+      - app_data:/data
+      - ./secrets:/secrets
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - internal
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn apps.annotator.api.main:app --host 0.0.0.0 --port 8000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mysql+pymysql://motranscript:${MYSQL_PASSWORD}@db:3306/motranscript
+      DATA_DIR: /data
+      MODEL_CACHE_DIR: /data/models
+      INFERENCE_BACKEND: ${INFERENCE_BACKEND:-runpod}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env}
+    volumes:
+      - app_data:/data
+      - ./secrets:/secrets
+    networks:
+      - internal
+    command: ["python", "-m", "apps.annotator.worker"]
+
+volumes:
+  mysql_data:
+  app_data:
+
+networks:
+  internal:
+    driver: bridge

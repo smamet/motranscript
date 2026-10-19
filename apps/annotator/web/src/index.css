@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-app-bg: var(--c-bg);
+  --color-app-surface: var(--c-surface);
+  --color-app-muted: var(--c-muted);
+  --color-app-border: var(--c-border);
+  --color-app-text: var(--c-text);
+  --color-app-text-muted: var(--c-text-muted);
+  --color-app-text-subtle: var(--c-text-subtle);
+  --color-app-hover: var(--c-hover);
+  --color-app-input: var(--c-input);
+}
+
+:root {
+  color-scheme: light;
+  --c-bg: #f1f5f9;
+  --c-surface: #ffffff;
+  --c-muted: #f8fafc;
+  --c-border: #cbd5e1;
+  --c-text: #0f172a;
+  --c-text-muted: #475569;
+  --c-text-subtle: #64748b;
+  --c-hover: #e2e8f0;
+  --c-input: #ffffff;
+  --wave-color: #94a3b8;
+  --wave-cursor: #475569;
+}
+
+.dark {
+  color-scheme: dark;
+  --c-bg: #020617;
+  --c-surface: #0f172a;
+  --c-muted: #1e293b;
+  --c-border: #334155;
+  --c-text: #f1f5f9;
+  --c-text-muted: #94a3b8;
+  --c-text-subtle: #64748b;
+  --c-hover: #1e293b;
+  --c-input: #0f172a;
+  --wave-color: #475569;
+  --wave-cursor: #e2e8f0;
+}
+
+body {
+  @apply min-h-screen bg-app-bg text-app-text antialiased;
+}
+
+.app-card {
+  @apply rounded-xl border border-app-border bg-app-surface shadow-sm;
+}
+
+.app-input {
+  @apply rounded-md border border-app-border bg-app-input px-3 py-2 text-sm text-app-text transition focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 disabled:opacity-60;
+}
+
+.app-btn-primary {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-50;
+}
+
+.app-btn-secondary {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-app-border bg-app-surface px-3 py-1.5 text-sm font-medium text-app-text transition hover:bg-app-hover disabled:opacity-50;
+}
+
+.app-btn-muted {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md bg-app-muted px-3 py-1.5 text-sm font-medium text-app-text transition hover:bg-app-hover disabled:opacity-50;
+}
+
+.app-alert-warning {
+  @apply rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200/90;
+}
+
+.app-alert-error {
+  @apply rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300;
+}
+
+.app-alert-info {
+  @apply rounded-md border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/20 dark:text-sky-200/90;
+}
+
+.app-alert-success {
+  @apply rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300;
+}

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+secrets/*
+!secrets/.gitkeep
+
+# Data (audio, segments, exports)
+data/
+
+# Node
+node_modules/
+apps/annotator/web/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local process manager
+.sail/
+
+# Smart backups (MySQL dumps + upload originals)
+backups/
+
+# Alembic
+# Keep migrations tracked; ignore local alembic overrides if any

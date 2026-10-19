@@ -1,0 +1,62 @@
+# GPU image for RunPod Serverless ASR (faster-whisper + pyannote + whisperx).
+FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY pyproject.toml README.md ./
+COPY apps ./apps
+COPY normalizer ./normalizer
+COPY training ./training
+COPY deploy/runpod_handler.py ./handler.py
+COPY deploy/runpod-torch-pin.txt /tmp/torch-pin.txt
+
+# Base image ships torch 2.4.0+cu124. whisperx/pyannote otherwise pull a
+# mismatched torchvision and crash:
+#   partially initialized module 'torchvision' has no attribute 'extension'
+RUN pip install --upgrade pip \
+    && pip install -e . \
+    && pip install --no-cache-dir \
+        -c /tmp/torch-pin.txt \
+        "pyannote.audio>=3.3.0,<4.0.0" \
+        "whisperx>=3.1.0" \
+        "runpod>=1.7.0" \
+        httpx \
+    && pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cu124 \
+        torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 \
+    && pip install --no-cache-dir "ctranslate2==4.5.0" \
+        "huggingface_hub>=0.23,<1" \
+        "transformers>=4.44,<4.52" \
+        nvidia-cudnn-cu12 nvidia-cublas-cu12 \
+    && python -c "import os, nvidia.cublas, nvidia.cudnn; \
+paths=[os.path.join(nvidia.cudnn.__path__[0],'lib'), os.path.join(nvidia.cublas.__path__[0],'lib')]; \
+open('/etc/ld.so.conf.d/nvidia-pip.conf','w').write('\\n'.join(paths)+'\\n'); \
+print('nvidia lib paths', paths)" \
+    && ldconfig \
+    && python -c "import ctranslate2, huggingface_hub, transformers, ctypes; \
+ctypes.CDLL('libcudnn_cnn.so.9'); \
+print('ctranslate2', ctranslate2.__version__); \
+print('huggingface_hub', huggingface_hub.__version__); \
+print('transformers', transformers.__version__); \
+print('libcudnn_cnn.so.9 ok')" \
+    && python -c "import torch, torchvision, torchaudio; \
+from torchvision import extension as _; \
+assert torch.__version__.startswith('2.4.0'), torch.__version__; \
+print('torch', torch.__version__, 'cuda', torch.version.cuda); \
+print('torchvision', torchvision.__version__); \
+print('torchaudio', torchaudio.__version__)"
+
+ENV WHISPER_DEVICE=cuda \
+    WHISPER_COMPUTE_TYPE=float16 \
+    INFERENCE_BACKEND=local \
+    DATA_DIR=/tmp/motranscript \
+    MODEL_CACHE_DIR=/runpod-volume/models
+
+CMD ["python", "-u", "handler.py"]
